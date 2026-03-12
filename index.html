@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<!-- Page title -->
+<title>Interactive RAG Learning Tool</title>
+
+<style>
+
+/* Light background theme */
+body{
+    font-family: Arial;
+    background:#f7f9fc;
+    padding:30px;
+    font-style: italic;
+}
+
+/* Card sections */
+.card{
+    background:white;
+    padding:20px;
+    margin:20px 0;
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Buttons */
+button{
+    padding:10px 20px;
+    margin:10px 0;
+    border:none;
+    background:#4CAF50;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#45a049;
+}
+
+/* Inputs */
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+}
+
+/* Output boxes */
+.output{
+    background:#eef2f7;
+    padding:10px;
+    margin-top:10px;
+    border-radius:5px;
+}
+
+img{
+    width:120px;
+    margin-top:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>📚 Interactive RAG Visual Learning Tool</h1>
+<p>Learn visually how Retrieval Augmented Generation works step-by-step.</p>
+
+<!-- STEP 1 INPUT -->
+<div class="card">
+
+<h2>1️⃣ Enter Text and Chunk Settings</h2>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Data_preprocessing_icon.png">
+
+<textarea id="textInput" placeholder="Enter some text..."></textarea>
+
+<label>Chunk Size</label>
+<input id="chunkSize" type="number" value="40">
+
+<label>Sliding Window</label>
+<input id="windowSize" type="number" value="20">
+
+<button onclick="createChunks()">Chunk Text</button>
+
+<div id="chunks" class="output"></div>
+
+</div>
+
+<!-- STEP 2 EMBEDDINGS -->
+<div class="card">
+
+<h2>2️⃣ Create Vector Embeddings</h2>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Vector_space_model.png">
+
+<button onclick="createEmbeddings()">Generate Embeddings</button>
+
+<div id="embeddings" class="output"></div>
+
+</div>
+
+<!-- STEP 3 SAVE -->
+<div class="card">
+
+<h2>3️⃣ Save Vectors</h2>
+
+<button onclick="saveVectors()">Save to Local Storage</button>
+
+<div id="saveStatus" class="output"></div>
+
+</div>
+
+<!-- STEP 4 QUERY -->
+<div class="card">
+
+<h2>4️⃣ Ask a Question</h2>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Question_mark_icon.png">
+
+<input id="queryInput" placeholder="Ask something">
+
+<label>Top N Chunks</label>
+<input id="topN" type="number" value="2">
+
+<button onclick="retrieveChunks()">Ask</button>
+
+<div id="retrievedChunks" class="output"></div>
+
+</div>
+
+<!-- STEP 5 PROMPT -->
+<div class="card">
+
+<h2>5️⃣ Prompt Construction</h2>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/Chat_icon.png">
+
+<div id="promptDisplay" class="output"></div>
+
+</div>
+
+<!-- STEP 6 LLM RESPONSE -->
+<div class="card">
+
+<h2>6️⃣ Simulated LLM Answer</h2>
+
+<button onclick="generateAnswer()">Generate Answer</button>
+
+<div id="answerBox" class="output"></div>
+
+</div>
+
+<script>
+
+/* store chunks */
+let chunks = []
+let embeddings = []
+
+/* STEP 1 — CHUNK TEXT */
+function createChunks(){
+
+    let text = document.getElementById("textInput").value
+    let size = parseInt(document.getElementById("chunkSize").value)
+    let window = parseInt(document.getElementById("windowSize").value)
+
+    chunks = []
+
+    /* Sliding window chunking */
+    for(let i=0;i<text.length;i+=window){
+        chunks.push(text.substring(i,i+size))
+    }
+
+    document.getElementById("chunks").innerHTML = chunks.map((c,i)=>`Chunk ${i+1}: ${c}`).join("<br>")
+}
+
+/* STEP 2 — CREATE EMBEDDINGS */
+function createEmbeddings(){
+
+    embeddings = []
+
+    /* Fake embeddings using random vectors */
+    chunks.forEach(chunk=>{
+        embeddings.push([
+            Math.random(),
+            Math.random(),
+            Math.random()
+        ])
+    })
+
+    document.getElementById("embeddings").innerHTML = embeddings.map((e,i)=>`Chunk ${i+1}: [${e.map(n=>n.toFixed(2)).join(", ")}]`).join("<br>")
+}
+
+/* STEP 3 — SAVE TO LOCAL STORAGE */
+function saveVectors(){
+
+    localStorage.setItem("chunks",JSON.stringify(chunks))
+    localStorage.setItem("vectors",JSON.stringify(embeddings))
+
+    document.getElementById("saveStatus").innerHTML = "Vectors saved locally."
+}
+
+/* STEP 4 — RETRIEVE CHUNKS */
+function retrieveChunks(){
+
+    let query = document.getElementById("queryInput").value
+    let N = parseInt(document.getElementById("topN").value)
+
+    /* Simulate similarity search */
+    let scored = chunks.map((chunk,i)=>{
+        return {chunk:chunk,score:Math.random()}
+    })
+
+    scored.sort((a,b)=>b.score-a.score)
+
+    let top = scored.slice(0,N)
+
+    document.getElementById("retrievedChunks").innerHTML =
+        top.map(t=>`Score ${t.score.toFixed(2)} → ${t.chunk}`).join("<br>")
+
+    /* Build prompt */
+    let context = top.map(t=>t.chunk).join("\n")
+
+    let prompt = `
+System Prompt:
+
+Answer the user's question based on context.
+
+Question: "${query}"
+
+Context:
+${context}
+`
+
+    document.getElementById("promptDisplay").innerText = prompt
+}
+
+/* STEP 6 — SIMULATED LLM */
+function generateAnswer(){
+
+    let query = document.getElementById("queryInput").value
+
+    document.getElementById("answerBox").innerHTML =
+        "🤖 Simulated LLM Response: Based on retrieved chunks, the answer to '"+query+"' is generated using contextual information."
+
+}
+
+</script>
+
+</body>
+</html>
